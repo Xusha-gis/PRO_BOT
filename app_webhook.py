@@ -10,7 +10,7 @@ from handlers import *
 
 # Log konfiguratsiyasi
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)
 
 app = Flask(name)
 
