@@ -1,7 +1,9 @@
-import os
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import (
+    Application, CommandHandler, CallbackQueryHandler,
+    MessageHandler, filters, ContextTypes
+)
 from database import Database
 from config import Config
 from handlers import *
@@ -24,7 +26,7 @@ class PremiumBot:
     async def check_subscription(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_check_subscription(update, context, self.db)
     
-    async def error_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def error_handler(self, update: object, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Xatolik: {context.error}")
 
 def main():
@@ -51,7 +53,7 @@ def main():
     application.add_error_handler(bot.error_handler)
     
     # Botni ishga tushirish
-    print("Bot ishga tushdi...")
+    print("Bot ishga tushdi ✅")
     application.run_polling()
 
 if __name__ == "__main__":
