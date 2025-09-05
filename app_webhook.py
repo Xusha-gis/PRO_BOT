@@ -1,27 +1,38 @@
 import os
-import logging
 from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
-
-from database import Database
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from config import Config
-from handlers import *
+from handlers import (
+    handle_start,
+    handle_check_subscription,
+    handle_subscription_callback,
+    handle_receipt,
+    handle_payment_callback,
+    handle_stats,
+    handle_broadcast,
+    handle_add_user,
+    handle_remove_user,
+    handle_admin_callback
+)
+from database import Database
 
-# Log konfiguratsiyasi
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Config va Database
+config = Config()
+db = Database()
 
+# Flask ilovasi
 app = Flask(__name__)
 
-# Database va Config
-db = Database()
-config = Config()
+# Telegram bot Application (updater=None qo‘yildi!)
+application = (
+    Application.builder()
+    .token(config.BOT_TOKEN)
+    .updater(None)
+    .build()
+)
 
-# Bot ilovasini yaratish
-application = Application.builder().token(config.BOT_TOKEN).build()
-
-# Handlers
+# Handlerlarni qo‘shish
 application.add_handler(CommandHandler("start", lambda u, c: handle_start(u, c, db, config)))
 application.add_handler(CommandHandler("check", lambda u, c: handle_check_subscription(u, c, db)))
 application.add_handler(CommandHandler("stats", handle_stats))
@@ -30,64 +41,25 @@ application.add_handler(CommandHandler("adduser", handle_add_user))
 application.add_handler(CommandHandler("removeuser", handle_remove_user))
 
 application.add_handler(CallbackQueryHandler(handle_subscription_callback, pattern="^sub_"))
-application.add_handler(CallbackQueryHandler(handle_payment_callback, pattern="^pay_"))
-application.add_handler(CallbackQueryHandler(handle_admin_callback, pattern="^admin_"))
+application.add_handler(CallbackQueryHandler(handle_payment_callback, pattern="^(pay_approve_|pay_reject_)"))
+application.add_handler(CallbackQueryHandler(handle_admin_callback, pattern="^(admin_stats|admin_payments)"))
 
-# ✅ Hujjat va rasmlar uchun to‘g‘ri filterlar
+# Foydalanuvchilar yuborgan to‘lov cheklari (foto + document)
 application.add_handler(MessageHandler(filters.PHOTO, handle_receipt))
-application.add_handler(MessageHandler(filters.Document.ALL, handle_receipt))
+application.add_handler(MessageHandler(filters.ATTACHMENT & filters.Document.ALL, handle_receipt))
 
-
-@app.route('/')
-def home():
-    return "🤖 Premium Telegram Bot - Webhook Mode ishlayapti!"
-
-
-@app.route('/webhook', methods=['POST'])
+# Flask route – Telegram webhook uchun
+@app.route(f"/{config.BOT_TOKEN}", methods=["POST"])
 def webhook():
-    try:
-        update_data = request.get_json()
-        update = Update.de_json(update_data, application.bot)
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    application.update_queue.put_nowait(update)
+    return "OK", 200
 
-        # Update ni qayta ishlash
-        application.update_queue.put_nowait(update)
-
-        return "OK", 200
-    except Exception as e:
-        logger.error(f"Webhook xatosi: {e}")
-        return "Error", 500
+@app.route("/")
+def home():
+    return "✅ Bot ishlayapti!", 200
 
 
-@app.route('/set_webhook', methods=['GET'])
-def set_webhook():
-    try:
-        webhook_url = f"https://{request.host}/webhook"
-        success = application.bot.set_webhook(webhook_url)
-
-        if success:
-            return f"✅ Webhook o'rnatildi: {webhook_url}"
-        else:
-            return "❌ Webhook o'rnatilmadi"
-    except Exception as e:
-        return f"❌ Webhook o'rnatishda xato: {e}"
-
-
-@app.route('/health')
-def health_check():
-    return {"status": "healthy", "service": "telegram-bot-webhook"}
-
-
-@app.before_first_request
-def initialize():
-    try:
-        webhook_url = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')}/webhook"
-        if webhook_url and 'render.com' in webhook_url:
-            application.bot.set_webhook(webhook_url)
-            logger.info(f"Webhook o'rnatildi: {webhook_url}")
-    except Exception as e:
-        logger.error(f"Webhook o'rnatishda xato: {e}")
-
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
