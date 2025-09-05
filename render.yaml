@@ -1,18 +1,22 @@
 services:
-  - type: web  # 🔥 WEB SERVICE!
-    name: premium-telegram-bot-web
+  - type: web
+    name: free-premium-bot
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app_webhook:app --bind 0.0.0.0:$PORT
     envVars:
       - key: BOT_TOKEN
-        fromSecret: true
+        fromSecret: BOT_TOKEN
+      - key: RENDER_URL
+        fromSecret: RENDER_URL
+      - key: RENDER_EXTERNAL_HOSTNAME
+        fromSecret: RENDER_EXTERNAL_HOSTNAME
       - key: CHANNEL_ID
-        fromSecret: true
+        fromSecret: CHANNEL_ID
       - key: ADMIN_IDS
-        fromSecret: true
+        fromSecret: ADMIN_IDS
       - key: CARD_NUMBER
-        fromSecret: true
+        fromSecret: CARD_NUMBER
       - key: CARDHOLDER_NAME
-        fromSecret: true
+        fromSecret: CARDHOLDER_NAME
