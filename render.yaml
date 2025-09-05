@@ -1,0 +1,20 @@
+services:
+  - type: worker
+    name: free-premium-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python keep_alive.py
+    envVars:
+      - key: BOT_TOKEN
+        fromSecret: BOT_TOKEN
+      - key: CHANNEL_ID
+        fromSecret: CHANNEL_ID
+      - key: ADMIN_IDS
+        fromSecret: ADMIN_IDS
+      - key: CARD_NUMBER
+        fromSecret: CARD_NUMBER
+      - key: CARDHOLDER_NAME
+        fromSecret: CARDHOLDER_NAME
+      - key: RENDER_URL
+        fromSecret: RENDER_URL 
