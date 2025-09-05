@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python keep_alive.py
+    startCommand: python app.py
     envVars:
       - key: BOT_TOKEN
         fromSecret: BOT_TOKEN
@@ -17,4 +17,4 @@ services:
       - key: CARDHOLDER_NAME
         fromSecret: CARDHOLDER_NAME
       - key: RENDER_URL
-        fromSecret: RENDER_URL 
+        fromSecret: RENDER_URL
