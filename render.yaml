@@ -8,10 +8,6 @@ services:
     envVars:
       - key: BOT_TOKEN
         fromSecret: BOT_TOKEN
-      - key: RENDER_URL
-        fromSecret: RENDER_URL
-      - key: RENDER_EXTERNAL_HOSTNAME
-        fromSecret: RENDER_EXTERNAL_HOSTNAME
       - key: CHANNEL_ID
         fromSecret: CHANNEL_ID
       - key: ADMIN_IDS
@@ -20,3 +16,5 @@ services:
         fromSecret: CARD_NUMBER
       - key: CARDHOLDER_NAME
         fromSecret: CARDHOLDER_NAME
+      - key: RENDER_URL
+        fromSecret: RENDER_URL
