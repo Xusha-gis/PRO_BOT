@@ -12,7 +12,7 @@ from handlers import *
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(name)
+app = Flask(__name__)
 
 # Database va Config
 db = Database()
@@ -21,7 +21,7 @@ config = Config()
 # Bot ilovasini yaratish
 application = Application.builder().token(config.BOT_TOKEN).build()
 
-# Handlers - BIR XIL! ✅
+# Handlers
 application.add_handler(CommandHandler("start", lambda u, c: handle_start(u, c, db, config)))
 application.add_handler(CommandHandler("check", lambda u, c: handle_check_subscription(u, c, db)))
 application.add_handler(CommandHandler("stats", handle_stats))
@@ -43,13 +43,11 @@ def home():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
-        # Webhook ma'lumotlarini olish
         update_data = request.get_json()
         update = Update.de_json(update_data, application.bot)
-        
-        # Update ni qayta ishlash
+
         application.process_update(update)
-        
+
         return "OK", 200
     except Exception as e:
         logger.error(f"Webhook xatosi: {e}")
@@ -58,14 +56,13 @@ def webhook():
 @app.route('/set_webhook', methods=['GET'])
 def set_webhook():
     try:
-        # Webhook URL ni o'rnatish
         webhook_url = f"https://{request.host}/webhook"
         success = application.bot.set_webhook(webhook_url)
-        
+
         if success:
             return f"✅ Webhook o'rnatildi: {webhook_url}"
         else:
-            return f"❌ Webhook o'rnatilmadi"
+            return "❌ Webhook o'rnatilmadi"
     except Exception as e:
         return f"❌ Webhook o'rnatishda xato: {e}"
 
@@ -84,6 +81,6 @@ def initialize():
     except Exception as e:
         logger.error(f"Webhook o'rnatishda xato: {e}")
 
-if name == 'main':
+if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
