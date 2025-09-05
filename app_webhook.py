@@ -1,65 +1,59 @@
 import os
+import config
+import requests
 from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
-from config import Config
-from handlers import (
-    handle_start,
-    handle_check_subscription,
-    handle_subscription_callback,
-    handle_receipt,
-    handle_payment_callback,
-    handle_stats,
-    handle_broadcast,
-    handle_add_user,
-    handle_remove_user,
-    handle_admin_callback
-)
-from database import Database
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# Config va Database
-config = Config()
-db = Database()
-
-# Flask ilovasi
+# Flask app
 app = Flask(__name__)
 
-# Telegram bot Application (updater=None qo‘yildi!)
-application = (
-    Application.builder()
-    .token(config.BOT_TOKEN)
-    .updater(None)
-    .build()
-)
+# Telegram application
+application = Application.builder().token(config.BOT_TOKEN).build()
 
-# Handlerlarni qo‘shish
-application.add_handler(CommandHandler("start", lambda u, c: handle_start(u, c, db, config)))
-application.add_handler(CommandHandler("check", lambda u, c: handle_check_subscription(u, c, db)))
-application.add_handler(CommandHandler("stats", handle_stats))
-application.add_handler(CommandHandler("broadcast", handle_broadcast))
-application.add_handler(CommandHandler("adduser", handle_add_user))
-application.add_handler(CommandHandler("removeuser", handle_remove_user))
+# Webhook URL
+WEBHOOK_URL = f"https://pro-bot-o36t.onrender.com/{config.BOT_TOKEN}"
 
-application.add_handler(CallbackQueryHandler(handle_subscription_callback, pattern="^sub_"))
-application.add_handler(CallbackQueryHandler(handle_payment_callback, pattern="^(pay_approve_|pay_reject_)"))
-application.add_handler(CallbackQueryHandler(handle_admin_callback, pattern="^(admin_stats|admin_payments)"))
 
-# Foydalanuvchilar yuborgan to‘lov cheklari (foto + document)
-application.add_handler(MessageHandler(filters.PHOTO, handle_receipt))
-application.add_handler(MessageHandler(filters.ATTACHMENT & filters.Document.ALL, handle_receipt))
+# ------------------ Handlers ------------------
 
-# Flask route – Telegram webhook uchun
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("✅ Bot ishlayapti va webhook ulandi!")
+
+
+application.add_handler(CommandHandler("start", start))
+
+
+# ------------------ Flask routes ------------------
+
 @app.route(f"/{config.BOT_TOKEN}", methods=["POST"])
 def webhook():
+    """Telegram webhook endpoint"""
     update = Update.de_json(request.get_json(force=True), application.bot)
-    application.update_queue.put_nowait(update)
-    return "OK", 200
+    application.update_queue.put(update)
+    return "ok"
 
-@app.route("/")
+
+@app.route("/", methods=["GET"])
 def home():
-    return "✅ Bot ishlayapti!", 200
+    return "Bot is running ✅"
 
 
+# ------------------ Auto webhook setup ------------------
+
+@app.before_first_request
+def set_webhook():
+    """Automatically set Telegram webhook when app starts"""
+    url = f"https://api.telegram.org/bot{config.BOT_TOKEN}/setWebhook"
+    data = {"url": WEBHOOK_URL}
+    try:
+        r = requests.post(url, data=data)
+        print("SetWebhook response:", r.json())
+    except Exception as e:
+        print("Failed to set webhook:", e)
+
+
+# ------------------ Run locally ------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
