@@ -3,6 +3,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+# Admin ID (ixtiyoriy)
+ADMIN_ID = os.getenv("ADMIN_ID")
+
+# Render webhook URL (o‘zingiznikini qo‘ying)
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "https://pro-bot-o36t.onrender.com")
 class Config:
     def __init__(self):
         self.BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
