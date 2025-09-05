@@ -1,9 +1,9 @@
+# keep_alive.py
 from flask import Flask
 import threading
 import time
 import requests
 import os
-from app import main  # asosiy botni import qilamiz
 
 app = Flask(__name__)
 
@@ -12,7 +12,7 @@ def home():
     return "Bot ishlamoqda! ✅"
 
 def run_flask():
-    port = int(os.environ.get('PORT', 10000))  # Render odatda 10000 port beradi
+    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
 
 def ping_self():
@@ -24,12 +24,11 @@ def ping_self():
                 print(f"Ping muvaffaqiyatli: {response.status_code}")
         except Exception as e:
             print(f"Ping xatosi: {e}")
-        time.sleep(300)  # har 5 daqiqada ping
+        time.sleep(300)
 
 if __name__ == "__main__":
-    # Flask server
     threading.Thread(target=run_flask, daemon=True).start()
-    # Ping
     threading.Thread(target=ping_self, daemon=True).start()
-    # Botni ishga tushirish
-    main()
+    # Agar webhook rejimida bo'lsangiz, bot webserver (gunicorn + app_webhook) ishlaydi, shuning uchun __main__ ga bot ishga tushirish qo'shmang.
+    while True:
+        time.sleep(60)
